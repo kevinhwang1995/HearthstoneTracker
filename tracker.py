@@ -28,6 +28,7 @@ def get():
 	print("You have submitted a deck.")
 	c.execute('INSERT INTO deck (name, deck_class, wins, losses, winrate) VALUES (?, ?, 0, 0, NULL)', (deck_name.get(), deck_class.get()))
 	con.commit()
+	clear()
 	
 def clear():
 	deck_class.set('----')
