@@ -1,5 +1,6 @@
 from tkinter import *
 import sqlite3 as sq
+import pandas as pd
 
 #Initializes the window.
 window = Tk()
@@ -28,14 +29,12 @@ con.commit()
 
 #Method used to submit a deck to the database.
 def get():
-	print("You have submitted a deck.")
 	if deck_name.get() == "":
 		temp_name = "Unnamed Deck"
 	else:
 		temp_name = deck_name.get()	
 	c.execute('SELECT COUNT(*) FROM deck WHERE name = ? AND deck_class = ?', (deck_name.get(), deck_class.get()))
 	sameName = c.fetchone()
-	print(sameName)
 	if deck_class.get() == "" or deck_class.get() == "----" or sameName != (0,):
 		return
 	c.execute('INSERT INTO deck (name, deck_class, wins, losses, winrate) VALUES (?, ?, 0, 0, 0)', (temp_name, deck_class.get()))
@@ -84,7 +83,6 @@ def update_decks():
 		widget.destroy()
 	c.execute("SELECT * FROM deck")
 	data = c.fetchall()
-	print(data)
 	for row in data:
 		deck_button = Button(decks_box, text = row[1], width = 25, bg = get_class_color(row[2]), relief = RAISED, command = lambda row = row: update_stats(row[1], row[2]))
 		deck_button.pack()
@@ -148,7 +146,6 @@ def update_stats(deck_name, deck_class):
 def delete_deck(deck_id ,deck_name, deck_class):
 	c.execute('DELETE FROM deck WHERE name = ? AND deck_class = ?', (deck_name, deck_class))
 	con.commit()
-	print(deck_id)
 	c.execute('DELETE FROM game WHERE deck_id = ?', (deck_id,))
 	con.commit()
 	update_decks()
@@ -177,6 +174,12 @@ def add_loss(deck_id, deck_name, deck_class, opponent_class):
 	c.execute('INSERT INTO game (deck_id, opponent_class, result) VALUES (?, ?, 0)', (deck_id, opponent_class))
 	con.commit()
 	update_stats(deck_name, deck_class)
+	
+def export_stats():
+	df = pd.read_sql_query('SELECT * FROM deck', con)
+	export_csv = df.to_csv(r'C:\Users\gnawh\Documents\GitHub\HearthstoneTracker\decks.csv', index = None, header = True)
+	df = pd.read_sql_query('SELECT * FROM game', con)
+	export_csv = df.to_csv(r'C:\Users\gnawh\Documents\GitHub\HearthstoneTracker\games.csv', index = None, header = True)
 	
 #Adds the logo at the top of the window.
 logo = PhotoImage(file = "legend.gif")
@@ -229,6 +232,10 @@ name_frame.place(x = 210, y = 150)
 #Creates frame for delete button.
 delete_frame = Frame(window, bg = "black")
 delete_frame.place(x = 440, y = 157)
+
+#Button for export feature.
+export_stats_button = Button(window, text = "Export Stats", command = export_stats)
+export_stats_button.place(x = 440, y = 20)
 
 #End the program.
 window.mainloop()
